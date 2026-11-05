@@ -66,11 +66,15 @@ inline common_json resolve(const common_json &cfg) {
 inline std::vector<std::string> command(const common_json &cfg,const std::string &name,int port,const fs::path &bin) {
     auto r=resolve(cfg);auto settings=cfg.value("inference",common_json::object());
     const auto cpu=settings.value("cpu_moe",0);const bool fit=settings.value("fit",true);
-    if(settings.value("mtp",0)>0&&r["model"].value("experts",0)>0)throw std::runtime_error("llama.cpp MoE MTP is disabled after a Vulkan device-loss trial; use MTP off. Native Strata MTP is separate.");
+    // Opt-in for llama.cpp MTP on MoE/ manual-placement profiles: "inference": {"mtp": N, "allow_mtp": true}.
+    // The default stays refused (upstream disabled it after a Vulkan device-loss trial); a profile that sets
+    // allow_mtp accepts the risk.  Tested on the RX 9070 XT at 8K and 262K context with Cyber-Tiel IQ1_M.
+    const bool allow_mtp=settings.value("allow_mtp",false);
+    if(settings.value("mtp",0)>0&&r["model"].value("experts",0)>0&&!allow_mtp)throw std::runtime_error("llama.cpp MoE MTP is disabled after a Vulkan device-loss trial; use MTP off (or set inference.allow_mtp in the profile). Native Strata MTP is separate.");
     if(cpu>0&&fit)throw std::runtime_error("Explicit CPU expert placement requires Fit off");
     if(!fit) {
         auto info=r["model"];if(info.value("split_count",1ULL)>1)throw std::runtime_error("Manual placement estimation does not cover multiple GGUF shards; use Fit");if(!info.value("kv_fp16_bytes_per_token",0ULL))throw std::runtime_error("Cannot verify manual placement memory for this architecture; use Fit");
-        if(settings.value("mtp",0)>0)throw std::runtime_error("Manual placement with llama.cpp MTP is not memory-validated; disable MTP or use Fit");
+        if(settings.value("mtp",0)>0&&!allow_mtp)throw std::runtime_error("Manual placement with llama.cpp MTP is not memory-validated; disable MTP or use Fit");
         auto weights=info.value("weights_bytes",0ULL);uint64_t cpu_weights=0;auto per_layer=info["expert_layer_bytes"].get<std::vector<uint64_t>>();
         for(int i=0;i<cpu&&i<(int)per_layer.size();++i){auto bytes=std::min<uint64_t>(weights,per_layer[i]);weights-=bytes;cpu_weights+=bytes;}
         const auto kv=settings.value("kv",std::string("q8_0"));double ratio=kv=="f16"?1.0:kv=="q4_0"?.28125:.53125;
