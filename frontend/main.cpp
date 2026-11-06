@@ -73,6 +73,8 @@ struct Options {
     std::string mtp;   // the prepared draft-head directory
     std::string mmproj;
     int vision_tokens = 1024;
+    bool vision_gpu = false;        // read the projector on the card instead of the CPU
+    std::string vision_exe;         // the profile's CPU reader; the card reader sits beside it
     std::string host = "127.0.0.1";
     int port = 8080;
     long long ctx = 32768;
@@ -776,6 +778,10 @@ bool parse_args(int argc, char **argv, Options &o) {
             o.mmproj = next("--mmproj");
         else if (a == "--vision-tokens")
             o.vision_tokens = std::atoi(next("--vision-tokens").c_str());
+        else if (a == "--vision-gpu")
+            o.vision_gpu = true;
+        else if (a == "--vision-cpu")
+            o.vision_gpu = false;
         else if (a == "--pack")
             o.pack = next("--pack");
         else if (a == "--mtp")
@@ -909,6 +915,8 @@ int main(int argc, char **argv) {
                 auto v = cfg.at("vision");
                 o.mmproj = v.at("mmproj").get<std::string>();
                 o.vision_tokens = v.value("max_tokens", 2048);
+                o.vision_gpu = v.value("gpu", false);
+                o.vision_exe = v.value("exe", "");
                 o.threads = v.value("threads", 4);
             }
             if (chdir(cfg.at("cwd").get<std::string>().c_str()))
@@ -978,7 +986,8 @@ int main(int argc, char **argv) {
     srv.tmpls = common_chat_templates_init(srv.model, "");
     if (!o.mmproj.empty()) {
         try {
-            srv.vision.init(o.mmproj, srv.model, o.threads, o.vision_tokens);
+            srv.vision.init(o.mmproj, srv.model, o.model, o.vision_exe, o.threads, o.vision_tokens,
+                             o.vision_gpu);
         } catch (const std::exception &ex) {
             std::fprintf(stderr, "strata-native: %s\n", ex.what());
             srv.engine.quit();

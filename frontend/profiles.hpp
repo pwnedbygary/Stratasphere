@@ -95,7 +95,7 @@ inline common_json metadata(const std::string &name, const common_json &cfg) {
             {"mtp", mtp == "off" || mtp == "0" ? "off" : mtp == "1" || mtp == "2" || mtp == "3" || mtp == "4" ? mtp : "external head"},
             {"prefill_chunk", option(args, "--prefill", "auto")},
             {"adaptive_weights", env.value("STRATA_Q35_ADAPTIVE_WEIGHTS", "0") == "1"},
-            {"vision_encoder", vision ? "CPU" : "off"},
+            {"vision_encoder", vision ? (cfg["vision"].value("gpu", false) ? "GPU" : "CPU") : "off"},
             {"resident_ram_gib", option(args, "--resident-budget-gib", "auto")},
             {"physical_reserve_mib", env.value("STRATA_Q35_PHYSICAL_RESERVE_MIB", "not configured")}}},
         {"architecture",
