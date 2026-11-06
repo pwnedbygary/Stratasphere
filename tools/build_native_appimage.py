@@ -12,6 +12,7 @@ def main():
     p.add_argument('--runtime-file',type=Path,required=True,help='Already downloaded AppImage runtime; packaging does not fetch it')
     p.add_argument('--rocm-build-dir',type=Path,required=True,help='Dedicated ROCm build with bin/llama and shared libraries')
     p.add_argument('--vulkan-binary',type=Path,required=True,help='Locally tested Vulkan-only executable')
+    p.add_argument('--vulkan-libs',type=Path,help='Optional directory whose *.so* files are copied beside the Vulkan executable (a release tarball splits it into llama plus libs; their RUNPATH is $ORIGIN)')
     p.add_argument('--binary',type=Path,default=ROOT/'build-hip/frontend/strata-native')
     p.add_argument('--output',type=Path,default=ROOT/'dist/Strata-Native-RX9070XT-x86_64.AppImage')
     a=p.parse_args()
@@ -28,6 +29,11 @@ def main():
     if a.vulkan_binary:
         if not a.vulkan_binary.is_file():p.error('Missing Vulkan executable')
         shutil.copy2(a.vulkan_binary,bindir/'llama-vulkan')
+        if a.vulkan_libs:
+            if not a.vulkan_libs.is_dir():p.error(f'Missing Vulkan library directory: {a.vulkan_libs}')
+            libraries=sorted(a.vulkan_libs.glob('*.so*'))
+            if not libraries:p.error(f'No *.so* files in {a.vulkan_libs}')
+            for library in libraries:shutil.copy2(library,bindir/library.name)
     data=bindir/'data';data.mkdir();shutil.copy2(ROOT/'data/expert-profile.bin',data/'expert-profile.bin')
     tuning=bindir/'tools/hip';tuning.mkdir(parents=True)
     for file in (ROOT/'tools/hip').glob('*.txt'):shutil.copy2(file,tuning/file.name)

@@ -1,0 +1,164 @@
+name: Stratasphere builds
+
+# Linux AMD (HIP) builds for the Stratasphere fork.
+#   - every merge to the tracked branches (push) builds the engine, the DeepSeek engine and the router AppImage;
+#   - a nightly run at 04:00 UTC builds the default branch and keeps the artifacts for 14 days;
+#   - a pushed release tag builds the same artifacts and uploads them to that tag's GitHub release (creating it
+#     with generated notes when it does not exist yet, otherwise replacing the assets).
+# The build uses AMD's ROCm 7.2.4 packages on a GitHub-hosted Ubuntu runner (no GPU needed: the HIP kernels are
+# compiled for gfx1200/gfx1201, never run here).  The router AppImage bundles a pinned llama.cpp Vulkan CLI
+# (release b10909, the build this fork's Cyber-Tiel MTP work was tested with) and its shared libraries.
+
+on:
+  push:
+    branches:
+      - main
+      - codex/rx9070xt-perf-0.2.10
+      - codex/rx9070xt-32gb-profile
+    tags:
+      - 'v*'
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: stratasphere-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Linux HIP build
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      ROCM_VERSION: 7.2.4
+      LLAMA_COMMIT: 3cf03257f219afbe7334045ff7c6a06ac68c627d
+      LLAMA_VULKAN_RELEASE: b10909
+      APPIMAGE_DIR: ${{ github.workspace }}/.cicd
+    steps:
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Build tools and ROCm
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build git curl wget unzip file patchelf libssl-dev python3
+          wget -qO - https://repo.radeon.com/rocm/rocm.gpg.key | gpg --dearmor | sudo tee /usr/share/keyrings/rocm.gpg >/dev/null
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/rocm.gpg] https://repo.radeon.com/rocm/apt/${ROCM_VERSION} noble main" \
+            | sudo tee /etc/apt/sources.list.d/rocm.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends rocm-hip-sdk
+          /opt/rocm/bin/hipcc --version
+
+      - name: llama.cpp source at the pinned commit
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/llama"
+          curl -fL -o "$RUNNER_TEMP/llama.zip" \
+            "https://github.com/ggml-org/llama.cpp/archive/${LLAMA_COMMIT}.zip"
+          unzip -q "$RUNNER_TEMP/llama.zip" -d "$RUNNER_TEMP/llama"
+          LLAMA_DIR="$RUNNER_TEMP/llama/llama.cpp-${LLAMA_COMMIT}"
+          test -f "$LLAMA_DIR/CMakeLists.txt"
+          ln -sfn "$LLAMA_DIR" third_party/llama.cpp
+          echo "LLAMA_DIR=$LLAMA_DIR" >> "$GITHUB_ENV"
+
+      - name: Configure
+        run: |
+          set -euo pipefail
+          cmake -G Ninja -S . -B build-cicd \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DSTRATA_ENABLE_HIP=ON -DSTRATA_ENABLE_CUDA=OFF \
+            -DSTRATA_NATIVE_EXPERTS=ON -DSTRATA_NATIVE_SERVER=ON -DSTRATA_BUILD_DSV41=ON \
+            -DSTRATA_BUILD_TESTS=OFF \
+            -DCMAKE_HIP_ARCHITECTURES="gfx1200;gfx1201" \
+            -DCMAKE_HIP_COMPILER=/opt/rocm/llvm/bin/clang++ \
+            -DCMAKE_HIP_COMPILER_ROCM_ROOT=/opt/rocm \
+            -DCMAKE_PREFIX_PATH=/opt/rocm \
+            "-DCMAKE_HIP_FLAGS=--rocm-path=/opt/rocm --rocm-device-lib-path=/opt/rocm/amdgcn/bitcode -L/opt/rocm/lib" \
+            -DSTRATA_GGML_DIR="${LLAMA_DIR}"
+
+      - name: Build engine, DeepSeek engine and router
+        run: |
+          set -euo pipefail
+          cmake --build build-cicd --target strata strata-dsv41 strata-native -j"$(nproc)"
+          ls -la build-cicd/strata build-cicd/strata-dsv41 build-cicd/frontend/strata-native
+
+      - name: Router AppImage
+        run: |
+          set -euo pipefail
+          mkdir -p "$APPIMAGE_DIR"
+          curl -fL -o "$APPIMAGE_DIR/appimagetool.AppImage" \
+            https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x "$APPIMAGE_DIR/appimagetool.AppImage"
+          curl -fL -o "$APPIMAGE_DIR/runtime-x86_64" \
+            https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64
+          curl -fL -o "$APPIMAGE_DIR/llama-vulkan.tar.gz" \
+            "https://github.com/ggml-org/llama.cpp/releases/download/${LLAMA_VULKAN_RELEASE}/llama-${LLAMA_VULKAN_RELEASE}-bin-ubuntu-vulkan-x64.tar.gz"
+          tar -xzf "$APPIMAGE_DIR/llama-vulkan.tar.gz" -C "$APPIMAGE_DIR"
+          VK="$APPIMAGE_DIR/llama-${LLAMA_VULKAN_RELEASE}"
+          test -x "$VK/llama"
+          mkdir -p "$APPIMAGE_DIR/llama-rocm/bin"
+          cp "$VK/llama" "$APPIMAGE_DIR/llama-rocm/bin/llama"
+          cp "$VK"/*.so* "$APPIMAGE_DIR/llama-rocm/bin/"
+          python3 tools/build_native_appimage.py \
+            --appimagetool "$APPIMAGE_DIR/appimagetool.AppImage" \
+            --runtime-file "$APPIMAGE_DIR/runtime-x86_64" \
+            --rocm-build-dir "$APPIMAGE_DIR/llama-rocm" \
+            --vulkan-binary "$VK/llama" \
+            --vulkan-libs "$VK" \
+            --binary build-cicd/frontend/strata-native \
+            --output dist/Stratasphere-linux-x86_64.AppImage
+
+      - name: Package
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp build-cicd/strata dist/strata
+          cp build-cicd/strata-dsv41 dist/strata-dsv41
+          cp build-cicd/frontend/strata-native dist/strata-native
+          cat > dist/BUILD-INFO.txt <<EOF
+          Stratasphere build $(date -u +%Y-%m-%dT%H:%M:%SZ)
+          commit: $GITHUB_SHA  ref: $GITHUB_REF_NAME
+          engine: 0.1.56 (HIP gfx1200/gfx1201), router with the opt-in llama.cpp MTP patch
+          built with ROCm ${ROCM_VERSION} and llama.cpp ${LLAMA_COMMIT}
+          The AppImage needs the host's ROCm 7.x at /opt/rocm.  strata / strata-dsv41 / strata-native also need it.
+          EOF
+          tar -czf dist/stratasphere-linux-x86_64.tar.gz -C dist strata strata-dsv41 strata-native BUILD-INFO.txt
+          ( cd dist && sha256sum Stratasphere-linux-x86_64.AppImage stratasphere-linux-x86_64.tar.gz > SHA256SUMS )
+          ls -la dist
+
+      - name: Keep the build
+        uses: actions/upload-artifact@v4
+        with:
+          name: stratasphere-${{ github.ref_name }}-${{ github.sha }}
+          path: dist/*
+          retention-days: 14
+
+      - name: Publish the release (tags only)
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 \
+            || gh release create "$GITHUB_REF_NAME" \
+                 --title "Stratasphere ${GITHUB_REF_NAME#v}" \
+                 --generate-notes
+          gh release upload "$GITHUB_REF_NAME" dist/* --clobber
