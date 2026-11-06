@@ -105,6 +105,10 @@ jobs:
       - name: Router AppImage
         run: |
           set -euo pipefail
+          # Asset names carry the release tag (1.0) on a tag, or the short commit otherwise, so a re-run replaces
+          # the same file instead of adding a second one.
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then VERSION="${GITHUB_REF_NAME#v}"; else VERSION="${GITHUB_SHA:0:12}"; fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           mkdir -p "$APPIMAGE_DIR"
           curl -fL -o "$APPIMAGE_DIR/appimagetool.AppImage" \
             https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
@@ -126,7 +130,7 @@ jobs:
             --vulkan-binary "$VK/llama" \
             --vulkan-libs "$VK" \
             --binary build-cicd/frontend/strata-native \
-            --output dist/Stratasphere-linux-x86_64.AppImage
+            --output "dist/Stratasphere-${VERSION}-linux-x86_64.AppImage"
 
       - name: Package
         run: |
@@ -136,14 +140,15 @@ jobs:
           cp build-cicd/strata-dsv41 dist/strata-dsv41
           cp build-cicd/frontend/strata-native dist/strata-native
           cat > dist/BUILD-INFO.txt <<EOF
-          Stratasphere build $(date -u +%Y-%m-%dT%H:%M:%SZ)
+          Stratasphere ${VERSION} build $(date -u +%Y-%m-%dT%H:%M:%SZ)
           commit: $GITHUB_SHA  ref: $GITHUB_REF_NAME
           engine: 0.1.56 (HIP gfx1200/gfx1201), router with the opt-in llama.cpp MTP patch
           built with ROCm ${ROCM_VERSION} and llama.cpp ${LLAMA_COMMIT}
           The AppImage needs the host's ROCm 7.x at /opt/rocm.  strata / strata-dsv41 / strata-native also need it.
           EOF
-          tar -czf dist/stratasphere-linux-x86_64.tar.gz -C dist strata strata-dsv41 strata-native BUILD-INFO.txt
-          ( cd dist && sha256sum Stratasphere-linux-x86_64.AppImage stratasphere-linux-x86_64.tar.gz > SHA256SUMS )
+          tar -czf "dist/stratasphere-${VERSION}-linux-x86_64.tar.gz" -C dist strata strata-dsv41 strata-native BUILD-INFO.txt
+          ( cd dist && sha256sum "Stratasphere-${VERSION}-linux-x86_64.AppImage" \
+              "stratasphere-${VERSION}-linux-x86_64.tar.gz" > SHA256SUMS )
           ls -la dist
 
       - name: Keep the build
@@ -163,4 +168,9 @@ jobs:
             || gh release create "$GITHUB_REF_NAME" \
                  --title "Stratasphere ${GITHUB_REF_NAME#v}" \
                  --generate-notes
-          gh release upload "$GITHUB_REF_NAME" dist/* --clobber
+          # An explicit list, never dist/*: the AppImage builder leaves its Strata-Native.AppDir folder there and
+          # "gh release upload" fails on a directory (it did on the first v1.0 run).
+          gh release upload "$GITHUB_REF_NAME" \
+            "dist/Stratasphere-${VERSION}-linux-x86_64.AppImage" \
+            "dist/stratasphere-${VERSION}-linux-x86_64.tar.gz" \
+            dist/SHA256SUMS dist/BUILD-INFO.txt --clobber
