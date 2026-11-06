@@ -7,7 +7,9 @@
 #include "mtmd.h"
 #include <array>
 #include <chrono>
+#include <cerrno>
 #include <csignal>
+#include <fcntl.h>
 #include <filesystem>
 #include <fstream>
 #include <map>
@@ -224,19 +226,26 @@ class Vision {
             if (!f || std::fwrite(bytes.data(), 1, bytes.size(), f.get()) != bytes.size())
                 throw std::runtime_error("cannot write the picture for the reader");
         }
-        int fds[2];
-        if (pipe(fds))
-            throw std::runtime_error("cannot start the GPU reader");
+        // The request goes through a file rather than a pipe: a reader that dies before it reads (missing HIP
+        // runtime, no room) would otherwise raise SIGPIPE in this process, and one bad picture must never take
+        // the router down.
+        ImageFile request_file;
+        {
+            auto f = std::unique_ptr<FILE, decltype(&std::fclose)>(
+                std::fopen(request_file.path.c_str(), "w"), std::fclose);
+            if (!f || std::fprintf(f.get(), "ENC %s %s\n", image_file.path.c_str(), out_file.path.c_str()) < 0)
+                throw std::runtime_error("cannot prepare the GPU reader request");
+        }
+        const int input = open(request_file.path.c_str(), O_RDONLY | O_CLOEXEC);
+        if (input < 0)
+            throw std::runtime_error("cannot open the GPU reader request");
         const pid_t pid = fork();
         if (pid < 0) {
-            close(fds[0]);
-            close(fds[1]);
+            close(input);
             throw std::runtime_error("cannot start the GPU reader");
         }
         if (pid == 0) {
-            dup2(fds[0], STDIN_FILENO);
-            close(fds[0]);
-            close(fds[1]);
+            dup2(input, STDIN_FILENO);
             const std::string threads = std::to_string(threads_);
             const std::string tokens = std::to_string(max_tokens_);
             execl(reader_.c_str(), reader_.c_str(), "--mmproj", mmproj_.c_str(), "--model",
@@ -244,18 +253,14 @@ class Vision {
                   tokens.c_str(), static_cast<char *>(nullptr));
             _exit(127);
         }
-        close(fds[0]);
-        const std::string line = "ENC " + image_file.path + " " + out_file.path + "\n";
-        if (write(fds[1], line.data(), line.size()) != (ssize_t)line.size())
-            std::fprintf(stderr, "strata-native: GPU reader did not take the request\n");
-        close(fds[1]);
+        close(input);
         int status = 0;
         bool finished = false;
         for (int i = 0; i < 15000 && !finished; ++i) {
             const pid_t done = waitpid(pid, &status, WNOHANG);
             if (done == pid)
                 finished = true;
-            else if (done < 0)
+            else if (done < 0 && errno != EINTR)
                 break;
             else
                 usleep(20000);
