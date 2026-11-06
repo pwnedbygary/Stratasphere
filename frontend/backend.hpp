@@ -95,7 +95,13 @@ inline std::vector<std::string> command(const common_json &cfg,const std::string
         if(sampling.contains(pair.first)&&sampling[pair.first].is_number())cmd.insert(cmd.end(),{pair.second,sampling[pair.first].dump_safe()});
     if(!fit)cmd.insert(cmd.end(),{"--n-gpu-layers","all"});
     if(cpu>0)cmd.insert(cmd.end(),{"--n-cpu-moe",std::to_string(cpu),"--load-mode","none"});
-    if(cfg.contains("vision")){cmd.insert(cmd.end(),{"--mmproj",cfg["vision"].at("mmproj").get<std::string>(),"--no-mmproj-offload"});}
+    if(cfg.contains("vision")){
+        cmd.insert(cmd.end(),{"--mmproj",cfg["vision"].at("mmproj").get<std::string>()});
+        // Vision towers run on the CPU unless the profile asks for the graphics card. A profile that
+        // sets vision.gpu true keeps the mmproj on the device; every other profile stays byte-identical
+        // to the previous releases, which always passed --no-mmproj-offload.
+        if(!cfg["vision"].value("gpu",false))cmd.push_back("--no-mmproj-offload");
+    }
     else cmd.push_back("--no-mmproj");
     return cmd;
 }

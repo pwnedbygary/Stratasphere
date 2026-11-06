@@ -24,6 +24,12 @@ int main() {
     assert(std::find(command.begin(),command.end(),"--offline")!=command.end());
     assert(std::find(command.begin(),command.end(),"--no-mmproj")!=command.end());
     cfg["vision"]={{"mmproj","/local/mmproj.gguf"}};command=native_backend::command(cfg,"test",1234,dir);
+    assert(std::find(command.begin(),command.end(),"--mmproj")!=command.end());
+    assert(std::find(command.begin(),command.end(),"--no-mmproj-offload")!=command.end());
+    cfg["vision"]["gpu"]=true;command=native_backend::command(cfg,"test",1234,dir);
+    assert(std::find(command.begin(),command.end(),"--mmproj")!=command.end());
+    assert(std::find(command.begin(),command.end(),"--no-mmproj-offload")==command.end());
+    cfg["vision"]["gpu"]=false;command=native_backend::command(cfg,"test",1234,dir);
     assert(std::find(command.begin(),command.end(),"--no-mmproj-offload")!=command.end());
     cfg["sampling"]={{"temperature",1.0},{"presence_penalty",1.1},{"top_k",20}};
     command=native_backend::command(cfg,"test",1234,dir);assert(find("--temp")=="1.0"&&find("--presence-penalty")=="1.1"&&find("--top-k")=="20");cfg.erase("sampling");
@@ -41,5 +47,5 @@ int main() {
     bool split_blocked=false;try{native_backend::command(cfg,"test",1234,dir);}catch(const std::exception &e){split_blocked=std::string(e.what()).find("multiple GGUF shards")!=std::string::npos;}assert(split_blocked);
     cfg.erase("inference");
     cfg["args"][1]=dense.string();bool refused=false;try{native_tuning::apply(cfg,common_json{{"llama_cpu_moe",1}});}catch(...){refused=true;}assert(refused);
-    std::filesystem::remove_all(dir);std::puts("PASS: metadata detection, conservative MoE routing, explicit device, offline commands and CPU vision");
+    std::filesystem::remove_all(dir);std::puts("PASS: metadata detection, conservative MoE routing, explicit device, offline commands, CPU vision by default and GPU vision on request");
 }
