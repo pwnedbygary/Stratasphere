@@ -1,0 +1,392 @@
+{
+ "cyber-tiel-coder|32k": {
+  "dir": "/home/garyb/Mounts/NVME/LLMs/bench-results/gauntlet-20261105/cyber-tiel-coder-32k",
+  "model": "cyber-tiel-coder",
+  "counted": 32742,
+  "prompt_tps": 1843.8299721057576,
+  "decode_tps": 30.868805154942965,
+  "fresh_tokens": 294,
+  "follow_tps": 30.77629824096515,
+  "follow_ttft": 0.3831081130047096,
+  "checks": [
+   12,
+   13
+  ],
+  "retrieval": [
+   3,
+   3
+  ],
+  "drafts": [
+   null,
+   null
+  ],
+  "fresh_ok": true
+ },
+ "cyber-tiel-coder|8k": {
+  "dir": "/home/garyb/Mounts/NVME/LLMs/bench-results/gauntlet-20261105/cyber-tiel-coder-8k",
+  "model": "cyber-tiel-coder",
+  "counted": 8190,
+  "prompt_tps": 1858.9330573037503,
+  "decode_tps": 30.938060369447406,
+  "fresh_tokens": 304,
+  "follow_tps": 31.051812567362646,
+  "follow_ttft": 0.3563781929988181,
+  "checks": [
+   12,
+   13
+  ],
+  "retrieval": [
+   3,
+   3
+  ],
+  "drafts": [
+   null,
+   null
+  ],
+  "fresh_ok": true
+ },
+ "deepseek-coder|8k": {
+  "dir": "/home/garyb/Mounts/NVME/LLMs/bench-results/gauntlet-20261105/deepseek-coder-8k",
+  "model": "deepseek41-ista-das-coder-iq2_xxs",
+  "counted": 8172,
+  "prompt_tps": 203.2,
+  "decode_tps": 2.1,
+  "fresh_tokens": 323,
+  "follow_tps": 2.2,
+  "follow_ttft": 12.026454224003828,
+  "checks": [
+   13,
+   13
+  ],
+  "retrieval": [
+   3,
+   3
+  ],
+  "drafts": [
+   0,
+   0
+  ],
+  "fresh_ok": true
+ },
+ "flash-unsloth-iq3_xxs|32k": {
+  "dir": "/home/garyb/Mounts/NVME/LLMs/bench-results/gauntlet-20261105/flash-unsloth-iq3_xxs-32k",
+  "model": "flash-unsloth-iq3_xxs",
+  "counted": 32750,
+  "prompt_tps": 324.5797559358452,
+  "decode_tps": 4.978471474703983,
+  "fresh_tokens": 370,
+  "follow_tps": 6.543215845541427,
+  "follow_ttft": 5.680032700998709,
+  "checks": [
+   13,
+   13
+  ],
+  "retrieval": [
+   3,
+   3
+  ],
+  "drafts": [
+   290,
+   267
+  ],
+  "fresh_ok": true
+ },
+ "flash-unsloth-iq3_xxs|8k": {
+  "dir": "/home/garyb/Mounts/NVME/LLMs/bench-results/gauntlet-20261105/flash-unsloth-iq3_xxs-8k-r2",
+  "model": "flash-unsloth-iq3_xxs",
+  "counted": 8136,
+  "prompt_tps": 9.685900096859001,
+  "decode_tps": 7.800813513409255,
+  "fresh_tokens": 364,
+  "follow_tps": 8.150018292263278,
+  "follow_ttft": 8.018687929987209,
+  "checks": [
+   13,
+   13
+  ],
+  "retrieval": [
+   3,
+   3
+  ],
+  "drafts": [
+   280,
+   269
+  ],
+  "fresh_ok": true,
+  "prompt_tps_cold": 254.0
+ },
+ "saluki27|8k": {
+  "dir": "/home/garyb/Mounts/NVME/LLMs/bench-results/gauntlet-20261105/saluki27-8k",
+  "model": "saluki27-abliterated-mtp-vision",
+  "counted": 8136,
+  "prompt_tps": 1323.141974304765,
+  "decode_tps": 72.25621663845853,
+  "fresh_tokens": 333,
+  "follow_tps": 66.74539200082148,
+  "follow_ttft": 0.4035368860058952,
+  "checks": [
+   13,
+   13
+  ],
+  "retrieval": [
+   3,
+   3
+  ],
+  "drafts": [
+   226,
+   220
+  ],
+  "fresh_ok": true
+ },
+ "saluki27-abliterated-mtp-vision|32k": {
+  "dir": "/home/garyb/Mounts/NVME/LLMs/bench-results/gauntlet-20261105/saluki27-abliterated-mtp-vision-32k",
+  "model": "saluki27-abliterated-mtp-vision",
+  "counted": 32750,
+  "prompt_tps": 1124.5059899257997,
+  "decode_tps": 62.36432539828544,
+  "fresh_tokens": 339,
+  "follow_tps": 59.006211180124225,
+  "follow_ttft": 0.46440806399914436,
+  "checks": [
+   13,
+   13
+  ],
+  "retrieval": [
+   3,
+   3
+  ],
+  "drafts": [
+   230,
+   224
+  ],
+  "fresh_ok": true
+ },
+ "swift27-iq3-s-mtp-vision|32k": {
+  "dir": "/home/garyb/Mounts/NVME/LLMs/bench-results/gauntlet-20261105/swift27-iq3-s-mtp-vision-32k",
+  "model": "swift27-iq3-s-mtp-vision",
+  "counted": 32750,
+  "prompt_tps": 1064.2688391832914,
+  "decode_tps": 58.49454478775098,
+  "fresh_tokens": 319,
+  "follow_tps": 55.640502888209305,
+  "follow_ttft": 0.9805101370002376,
+  "checks": [
+   13,
+   13
+  ],
+  "retrieval": [
+   3,
+   3
+  ],
+  "drafts": [
+   214,
+   211
+  ],
+  "fresh_ok": true
+ },
+ "swift27-iq3-s-mtp-vision|8k": {
+  "dir": "/home/garyb/Mounts/NVME/LLMs/bench-results/gauntlet-20261105/swift27-iq3-s-mtp-vision-8k",
+  "model": "swift27-iq3-s-mtp-vision",
+  "counted": 8136,
+  "prompt_tps": 1263.3736548704173,
+  "decode_tps": 67.32953953265378,
+  "fresh_tokens": 323,
+  "follow_tps": 59.47444494467218,
+  "follow_ttft": 0.6054772329953266,
+  "checks": [
+   13,
+   13
+  ],
+  "retrieval": [
+   3,
+   3
+  ],
+  "drafts": [
+   216,
+   214
+  ],
+  "fresh_ok": true
+ },
+ "swift27-iq3-xxs-vision|32k": {
+  "dir": "/home/garyb/Mounts/NVME/LLMs/bench-results/gauntlet-20261105/swift27-iq3-xxs-vision-32k",
+  "model": "swift27-iq3-xxs-vision",
+  "counted": 32750,
+  "prompt_tps": 1106.280633839689,
+  "decode_tps": 59.928611685139956,
+  "fresh_tokens": 319,
+  "follow_tps": 54.40580328568381,
+  "follow_ttft": 0.48331540200160816,
+  "checks": [
+   13,
+   13
+  ],
+  "retrieval": [
+   3,
+   3
+  ],
+  "drafts": [
+   212,
+   212
+  ],
+  "fresh_ok": true
+ },
+ "swift27-iq3-xxs-vision|8k": {
+  "dir": "/home/garyb/Mounts/NVME/LLMs/bench-results/gauntlet-20261105/swift27-iq3-xxs-vision-8k",
+  "model": "swift27-iq3-xxs-vision",
+  "counted": 8136,
+  "prompt_tps": 1290.5067808708066,
+  "decode_tps": 67.87378454860742,
+  "fresh_tokens": 319,
+  "follow_tps": 61.20347552439463,
+  "follow_ttft": 0.420227080991026,
+  "checks": [
+   13,
+   13
+  ],
+  "retrieval": [
+   3,
+   3
+  ],
+  "drafts": [
+   212,
+   212
+  ],
+  "fresh_ok": true
+ },
+ "flash-coder-iq1_m|8k": {
+  "counted": 8136,
+  "prompt": 1067.2,
+  "decode": 73.1,
+  "follow": 53.5,
+  "tokens": 352,
+  "checks": "12/13",
+  "retrieval": "3/3",
+  "drafts": [
+   259,
+   270
+  ]
+ },
+ "flash-coder-iq1_m|8k_cold": {
+  "counted": 8136,
+  "prompt": 303.5,
+  "decode": 23.6,
+  "follow": 14.2,
+  "tokens": 356,
+  "checks": "12/13",
+  "retrieval": "3/3",
+  "drafts": [
+   261,
+   287
+  ]
+ },
+ "flash-coder-iq1_m|32k": {
+  "counted": 32750,
+  "prompt": 2540.3,
+  "decode": 38.0,
+  "follow": 47.0,
+  "tokens": 352,
+  "checks": "12/13",
+  "retrieval": "3/3",
+  "drafts": [
+   255,
+   271
+  ]
+ },
+ "saluki27-abliterated-mtp-vision|max": {
+  "counted": 128974,
+  "prompt": 763.8,
+  "decode": 49.21,
+  "follow": 45.18,
+  "tokens": 343,
+  "checks": "13/13",
+  "retrieval": "3/3"
+ },
+ "swift27-iq3-s-mtp-vision|max": {
+  "counted": 128974,
+  "prompt": 727.8,
+  "decode": 12.99,
+  "follow": 11.43,
+  "tokens": 319,
+  "checks": "13/13",
+  "retrieval": "3/3"
+ },
+ "swift27-iq3-xxs-vision|max": {
+  "counted": 128974,
+  "prompt": 746.0,
+  "decode": 20.35,
+  "follow": 17.12,
+  "tokens": 319,
+  "checks": "13/13",
+  "retrieval": "3/3"
+ },
+ "flash-unsloth-iq3_xxs|max": {
+  "counted": 128974,
+  "prompt": 332.5,
+  "decode": 4.93,
+  "follow": 7.19,
+  "tokens": 347,
+  "checks": "12/13",
+  "retrieval": "3/3"
+ },
+ "flash-coder-iq1_m|max": {
+  "counted": 128974,
+  "prompt": 2170.4,
+  "decode": 54.8,
+  "follow": 24.4,
+  "tokens": 352,
+  "checks": "12/13",
+  "retrieval": "3/3"
+ },
+ "cyber-tiel-coder|max": {
+  "counted": 260096,
+  "prompt": 970.2,
+  "decode": 24.22,
+  "follow": 25.68,
+  "tokens": 454,
+  "checks": "13/13",
+  "retrieval": "3/3"
+ },
+ "deepseek-coder|max": {
+  "counted": 1046486,
+  "max_context": 1048576,
+  "attempted": true,
+  "prefill_partial_tokens": 555968,
+  "prefill_partial_seconds": 1617.9,
+  "prefill_tps": 344.0,
+  "stopped": true,
+  "note": "1M config loaded (context 1048576; KV cache 0.97 GB, expert cache 3.35 GB/351 experts). Stopped at 53% of the prompt by user choice; ~51 min to first token at that rate."
+ },
+ "cyber-8k-mtp-ub1024": {
+  "counted": 8190,
+  "prompt": 1888.9,
+  "decode": 65.83,
+  "follow": 52.36,
+  "drafts": [
+   191,
+   204
+  ],
+  "checks": "12/13"
+ },
+ "cyber-8k-mtp-ub512": {
+  "counted": 8190,
+  "prompt": 1284.7,
+  "decode": 59.51,
+  "follow": 50.74,
+  "drafts": [
+   188,
+   210
+  ],
+  "checks": "12/13"
+ },
+ "cyber-max-mtp-ub512": {
+  "counted": 260096,
+  "prompt": 748.9,
+  "decode": 38.34,
+  "follow": 30.81,
+  "drafts": [
+   186,
+   216
+  ],
+  "checks": "12/13"
+ }
+}
